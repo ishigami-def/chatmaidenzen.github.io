@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -47,6 +48,15 @@
       background-color: rgba(255, 255, 255, 0.15);
       color: white;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .message-info {
+        font-size: 0.7em;
+        opacity: 0.7;
+        margin-top: 5px;
     }
 
     .delete-btn {
@@ -62,6 +72,8 @@
       height: 20px;
       cursor: pointer;
       display: none;
+      line-height: 20px;
+      text-align: center;
     }
 
     .message:hover .delete-btn {
@@ -103,6 +115,7 @@
       color: white;
       font-weight: bold;
       cursor: pointer;
+      transition: background-color 0.3s;
     }
 
     button:hover {
@@ -139,13 +152,18 @@
       z-index: 10;
     }
 
-    .edit-menu input, .edit-menu textarea, .edit-menu select {
+    .edit-menu input, .edit-menu textarea, .edit-menu select, .edit-menu button {
       width: 100%;
-      padding: 6px;
+      padding: 8px;
       border-radius: 8px;
       border: none;
       outline: none;
       font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    
+    .edit-menu button {
+      margin-top: 5px;
     }
 
     .edit-btn {
@@ -189,6 +207,8 @@
 
   <label>Edit Profil Karakter:</label>
   <textarea id="charProfile" rows="3"></textarea>
+  
+  <button onclick="resetChat()">Reset Chat</button>
 </div>
 
 <div class="chat-container">
@@ -249,16 +269,35 @@
     localStorage.setItem("geminiVersion", currentModel);
   });
 
+  // Fungsi untuk menghapus semua pesan
+  function resetChat() {
+      chatBox.innerHTML = '';
+  }
+
+  // Fungsi untuk menghapus pesan spesifik
+  function deleteMessage(element) {
+      element.remove();
+  }
+
+  // Fungsi untuk menghitung perkiraan token
+  function countTokens(text) {
+      // Perkiraan sederhana: 1 token ~ 4 karakter
+      return Math.ceil(text.length / 4);
+  }
+
   async function sendMessage() {
     const input = document.getElementById("userInput");
     const text = input.value.trim();
     if (!text) return;
 
-    appendMessage(text, "user");
+    const userMessageTokenCount = countTokens(text);
+    appendMessage(text, "user", `Tokens: ${userMessageTokenCount}`);
     input.value = "";
 
+    const loadingMessage = appendMessage("Alice sedang mengetik...", "ai");
+    
+    const startTime = performance.now();
     const prompt = `${persona}\n\nPertanyaan dari Tuan: ${text}`;
-    appendMessage("Alice sedang mengetik...", "ai");
 
     try {
       const response = await fetch(
@@ -271,21 +310,56 @@
       );
       const data = await response.json();
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab saat ini~";
-      appendMessage(reply, "ai");
+      
+      const endTime = performance.now();
+      const generationTime = (endTime - startTime) / 1000;
+      const aiMessageTokenCount = countTokens(reply);
+
+      const infoText = `Waktu: ${generationTime.toFixed(2)}s | Tokens: ${aiMessageTokenCount}`;
+      
+      // Hapus pesan loading dan ganti dengan balasan nyata
+      chatBox.removeChild(loadingMessage);
+      appendMessage(reply, "ai", infoText);
+
     } catch (err) {
+      chatBox.removeChild(loadingMessage);
       appendMessage("Ups, koneksi ke server gagal~", "ai");
     }
   }
 
-  function appendMessage(message, sender) {
-    const msg = document.createElement("div");
-    msg.className = `message ${sender}`;
-    msg.innerText = message;
-    chatBox.appendChild(msg);
+  function appendMessage(message, sender, info = '') {
+    const msgContainer = document.createElement("div");
+    msgContainer.className = `message ${sender}`;
+
+    const msgText = document.createElement("div");
+    msgText.innerText = message;
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.innerText = "x";
+    deleteBtn.onclick = () => deleteMessage(msgContainer);
+
+    msgContainer.appendChild(msgText);
+    msgContainer.appendChild(deleteBtn);
+
+    if (info) {
+        const infoSpan = document.createElement("div");
+        infoSpan.className = "message-info";
+        infoSpan.innerText = info;
+        msgContainer.appendChild(infoSpan);
+    }
+
+    if (message === "Alice sedang mengetik...") {
+        msgContainer.classList.add("loading");
+    }
+
+    chatBox.appendChild(msgContainer);
     chatBox.scrollTop = chatBox.scrollHeight;
+    return msgContainer;
   }
 </script>
 
 </body>
 </html>
+
 
