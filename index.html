@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alice AI Chat</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-image: url('https://wallpaperaccess.com/full/2213424.jpg'); /* Ganti dengan direct image URL kamu */
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      backdrop-filter: blur(3px);
+    }
+
+    .chat-container {
+      max-width: 600px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 50px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .message {
+      padding: 10px 15px;
+      margin: 10px 0;
+      border-radius: 15px;
+      line-height: 1.6;
+    }
+
+    .user {
+      background-color: #d1e7dd;
+      align-self: flex-end;
+      text-align: right;
+    }
+
+    .ai {
+      background-color: #f8d7da;
+      text-align: left;
+    }
+
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <h2>Chat with Alice 🤖</h2>
+  <div class="chat-box" id="chatBox"></div>
+  <input type="text" id="userInput" placeholder="Tulis sesuatu..." />
+  <button onclick="sendMessage()">Kirim</button>
+</div>
+
+<script>
+  const API_KEY = "AIzaSyAX1WGkHJX7AcRZaD-Xp4m7aGgzHJVs5o8";
+  const chatBox = document.getElementById("chatBox");
+
+  function appendMessage(message, sender) {
+    const msg = document.createElement("div");
+    msg.className = `message ${sender}`;
+    msg.innerText = message;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById("userInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    appendMessage(text, "user");
+    input.value = "";
+
+    const prompt = `You are Alice, a friendly and empathetic AI assistant who helps people. Always reply in Indonesian. Your response should be 200-350 words. Question: ${text}`;
+
+    try {
+      const response = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: prompt }]
+            }]
+          })
+        }
+      );
+
+      const data = await response.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, terjadi kesalahan dalam menjawab.";
+      appendMessage(reply, "ai");
+    } catch (err) {
+      appendMessage("Gagal terhubung ke AI: " + err.message, "ai");
+    }
+  }
+</script>
+
+</body>
+</html>
