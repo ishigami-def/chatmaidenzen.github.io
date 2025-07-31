@@ -5,17 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Alice AI Chat</title>
   <style>
+
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-image: url('mikazuki.jpg'); /* Ganti dengan direct image URL kamu */
-      background-size: cover;
+      background-image: url("mikazuki.jpg"); /* atau bisa URL: https://raw.githubusercontent.com/... */
+      background-repeat: no-repeat;
+      background-size: contain; /* atau coba 'cover' */
       background-position: center;
-      background-attachment: fixed;
-      backdrop-filter: blur(3px);
+      background-color: #000; /* fallback color */
     }
 
-
+    .content {
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 24px;
+      text-shadow: 1px 1px 4px black;
+    }
     .chat-container {
       max-width: 600px;
       margin: auto;
