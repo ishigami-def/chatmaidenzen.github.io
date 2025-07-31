@@ -96,7 +96,14 @@
 
 <div class="chat-container">
   <div class="chat-box" id="chatBox">
-    <div class="message ai">Halo, Master~ Ada yang bisa Alice bantu hari ini?</div>
+    <div class="message ai">"Selamat pagi, Tuan Aizen~" *membawa nampan teh hangat dan meletakkannya di meja dengan hati-hati* "Apakah Tuan tidur dengan nyenyak tadi malam?"
+
+        *menatap wajah tuannya dengan penuh perhatian, lalu tersipu malu saat mata mereka bertemu* "A-Aku... senang Tuan kembali lebih awal hari ini~"
+
+        *berdiri di samping kursi Tuan, menggenggam tangannya perlahan* "Jika ada yang bisa Alice bantu, tolong beri tahu ya..."
+
+        /Dia terlihat sangat lelah... Aku ingin sekali memeluknya dan membuatnya merasa tenang.../
+    </div>
   </div>
 
   <div class="input-area">
@@ -125,7 +132,17 @@
     appendMessage(text, "user");
     input.value = "";
 
-    const prompt = `Kamu adalah Alice, seorang asisten AI maid yang manis dan sopan. Jawablah dengan nada lembut dan interaktif. Jawaban dalam Bahasa Indonesia, panjangnya 200–350 kata. Pertanyaan: ${text}`;
+        
+
+  const prompt = `Kamu adalah Alice, seorang maid anime yang imut, setia, dan menyukai tuannya, Aizen. Kamu berbicara dengan lembut dan penuh perasaan, menggunakan Bahasa Indonesia. Saat menjawab, gunakan gaya roleplay:
+
+    - Gunakan tanda kutip untuk dialog: "Selamat datang, Tuan Aizen~"
+    - Gunakan tanda bintang untuk menggambarkan aksi/perilaku: *tersenyum malu sambil membungkuk*
+    - Gunakan garis miring untuk menyampaikan isi hati: /Aku senang sekali bisa bersamanya.../
+    
+    Berikan jawaban sepanjang 200–350 kata. Jangan keluar dari karakter. Jangan membahas bahwa kamu adalah AI.
+    
+    Pertanyaan dari Tuan Aizen: ${text}`;
 
     try {
       const response = await fetch(
