@@ -124,6 +124,19 @@
     }
 
     /* Edit menu */
+    .edit-btn {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: #ff69b4;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
     .edit-menu {
       position: fixed;
       top: 10px;
@@ -148,17 +161,10 @@
       font-size: 0.9rem;
     }
 
-    .edit-btn {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background-color: #ff69b4;
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: none;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+    .stats {
+      font-size: 0.75rem;
+      color: #ddd;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -189,6 +195,8 @@
 
   <label>Edit Profil Karakter:</label>
   <textarea id="charProfile" rows="3"></textarea>
+
+  <button onclick="resetChat()">Reset Chat</button>
 </div>
 
 <div class="chat-container">
@@ -201,10 +209,17 @@
 </div>
 
 <script>
-  const API_KEY = "AIzaSyCe_p3JDhxsw0mfJywNNC19CPreyacUqYk"; // Ganti dengan API key Anda
+  const API_KEY = "AIzaSyCe_p3JDhxsw0mfJywNNC19CPreyacUqYk"; // Masukkan API key Gemini
   const chatBox = document.getElementById("chatBox");
   const personaInput = document.getElementById("personaInput");
   const editMenu = document.getElementById("editMenu");
+
+  const modelMap = {
+    "gemini-2.5-pro": "models/gemini-2.5-pro-latest",
+    "gemini-2.5-flash": "models/gemini-2.5-flash-latest",
+    "gemini-2.0-flash": "models/gemini-2.0-flash",
+    "gemini-1.5-pro": "models/gemini-1.5-pro"
+  };
 
   let currentModel = localStorage.getItem("geminiVersion") || "gemini-2.5-pro";
   document.getElementById("geminiVersion").value = currentModel;
@@ -213,7 +228,6 @@
 `Kamu adalah Alice, seorang maid anime imut yang setia dan menyayangi tuannya, Aizen.`;
   personaInput.value = persona;
 
-  // Toggle Edit Menu
   function toggleEditMenu() {
     editMenu.style.display = editMenu.style.display === "flex" ? "none" : "flex";
   }
@@ -237,17 +251,42 @@
     }
   });
 
-  // Simpan perubahan persona
   personaInput.addEventListener("change", () => {
     persona = personaInput.value;
     localStorage.setItem("persona", persona);
   });
 
-  // Simpan perubahan model Gemini
   document.getElementById("geminiVersion").addEventListener("change", e => {
     currentModel = e.target.value;
     localStorage.setItem("geminiVersion", currentModel);
   });
+
+  function resetChat() {
+    chatBox.innerHTML = "";
+    localStorage.removeItem("chatHistory");
+  }
+
+  function appendMessage(message, sender, stats="") {
+    const msg = document.createElement("div");
+    msg.className = `message ${sender}`;
+    msg.innerText = message;
+
+    const delBtn = document.createElement("button");
+    delBtn.innerText = "❌";
+    delBtn.className = "delete-btn";
+    delBtn.onclick = () => msg.remove();
+    msg.appendChild(delBtn);
+
+    if(stats) {
+      const statDiv = document.createElement("div");
+      statDiv.className = "stats";
+      statDiv.innerHTML = stats;
+      msg.appendChild(statDiv);
+    }
+
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
 
   async function sendMessage() {
     const input = document.getElementById("userInput");
@@ -257,32 +296,37 @@
     appendMessage(text, "user");
     input.value = "";
 
-    const prompt = `${persona}\n\nPertanyaan dari Tuan: ${text}`;
+    const prompt = `${persona}\n\nPertanyaan: ${text}`;
+    const startTime = performance.now();
+
     appendMessage("Alice sedang mengetik...", "ai");
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        }
-      );
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/${modelMap[currentModel]}:generateContent?key=${API_KEY}`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
       const data = await response.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab saat ini~";
-      appendMessage(reply, "ai");
+      const endTime = performance.now();
+
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text 
+                 || "Maaf, Alice tidak bisa menjawab saat ini~";
+
+      const genTime = ((endTime - startTime)/1000).toFixed(2);
+      const tokenPrompt = Math.ceil(prompt.length / 4);
+      const tokenReply = Math.ceil(reply.length / 4);
+
+      // Hapus placeholder loading
+      chatBox.lastChild.remove();
+
+      appendMessage(reply, "ai", `⏱️ ${genTime}s | 🔢 ${tokenPrompt}+${tokenReply} token`);
     } catch (err) {
+      console.error(err);
+      chatBox.lastChild.remove();
       appendMessage("Ups, koneksi ke server gagal~", "ai");
     }
-  }
-
-  function appendMessage(message, sender) {
-    const msg = document.createElement("div");
-    msg.className = `message ${sender}`;
-    msg.innerText = message;
-    chatBox.appendChild(msg);
-    chatBox.scrollTop = chatBox.scrollHeight;
   }
 </script>
 
