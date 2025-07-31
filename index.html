@@ -1,92 +1,108 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Alice AI Chat</title>
   <style>
-
     body {
-      background-image: url("mikazuki.jpg"); /* atau bisa URL: https://raw.githubusercontent.com/... */
-      background-repeat: no-repeat;
-      background-size: contain; /* atau coba 'cover' */
-      background-position: center;
-      background-color: #000; /* fallback color */
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: url("mikazuki.jpg") no-repeat center center fixed;
+      background-size: cover;
+      overflow: hidden;
     }
 
-    .content {
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      font-size: 24px;
-      text-shadow: 1px 1px 4px black;
-    }
     .chat-container {
-      max-width: 600px;
-      margin: auto;
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 15px;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 20px;
-      margin-top: 50px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    }
-
-    .message {
-      padding: 10px 15px;
-      margin: 10px 0;
-      border-radius: 15px;
-      line-height: 1.6;
-    }
-
-    .user {
-      background-color: #d1e7dd;
-      align-self: flex-end;
-      text-align: right;
-    }
-
-    .ai {
-      background-color: #f8d7da;
-      text-align: left;
+      box-sizing: border-box;
+      backdrop-filter: blur(5px);
     }
 
     .chat-box {
+      width: 100%;
+      max-width: 600px;
+      height: 70vh;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
+      gap: 10px;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+
+    .message {
+      padding: 12px 18px;
+      border-radius: 18px;
+      max-width: 80%;
+      word-wrap: break-word;
+      backdrop-filter: blur(6px);
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: rgba(173, 216, 230, 0.3);
+    }
+
+    .ai {
+      align-self: flex-start;
+      background-color: rgba(255, 182, 193, 0.25);
+    }
+
+    .input-area {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
     }
 
     input[type="text"] {
-      width: 100%;
+      flex: 1;
       padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      margin-top: 10px;
+      border-radius: 20px;
+      border: none;
+      font-size: 1rem;
+      outline: none;
     }
 
     button {
-      margin-top: 10px;
-      padding: 10px 20px;
+      padding: 12px 20px;
+      border-radius: 20px;
+      background-color: #ff69b4;
       border: none;
-      border-radius: 10px;
-      background-color: #007bff;
       color: white;
-      font-size: 1rem;
+      font-weight: bold;
       cursor: pointer;
     }
 
     button:hover {
-      background-color: #0056b3;
+      background-color: #ff3380;
     }
   </style>
 </head>
 <body>
 
 <div class="chat-container">
-  <h2>Chat with Alice 🤖</h2>
-  <div class="chat-box" id="chatBox"></div>
-  <input type="text" id="userInput" placeholder="Tulis sesuatu..." />
-  <button onclick="sendMessage()">Kirim</button>
+  <div class="chat-box" id="chatBox">
+    <div class="message ai">Halo, Master~ Ada yang bisa Alice bantu hari ini?</div>
+  </div>
+
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="Ketik pesan di sini..." />
+    <button onclick="sendMessage()">Kirim</button>
+  </div>
 </div>
 
 <script>
@@ -109,7 +125,7 @@
     appendMessage(text, "user");
     input.value = "";
 
-    const prompt = `You are Alice, a friendly and empathetic AI assistant who helps people. Always reply in Indonesian. Your response should be 200-350 words. Question: ${text}`;
+    const prompt = `Kamu adalah Alice, seorang asisten AI maid yang manis dan sopan. Jawablah dengan nada lembut dan interaktif. Jawaban dalam Bahasa Indonesia, panjangnya 200–350 kata. Pertanyaan: ${text}`;
 
     try {
       const response = await fetch(
@@ -120,18 +136,16 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [{ text: prompt }]
-            }]
+            contents: [{ parts: [{ text: prompt }] }]
           })
         }
       );
 
       const data = await response.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, terjadi kesalahan dalam menjawab.";
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab saat ini~";
       appendMessage(reply, "ai");
     } catch (err) {
-      appendMessage("Gagal terhubung ke AI: " + err.message, "ai");
+      appendMessage("Ups, koneksi ke server gagal~", "ai");
     }
   }
 </script>
