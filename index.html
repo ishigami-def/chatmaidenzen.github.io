@@ -5,15 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Alice AI Chat</title>
   <style>
+    :root {
+      --user-bg: rgba(173, 216, 230, 0.35);
+      --ai-bg: rgba(255, 182, 193, 0.3);
+      --btn-color: #ff69b4;
+      --btn-hover: #ff3380;
+    }
+
     body {
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: url("mikazuki.jpg") no-repeat center center fixed;
+      background: url("https://wallpapercave.com/wp/wp8339177.jpg") no-repeat center center fixed; /* Ganti dengan URL gambar Anda */
       background-size: cover;
       overflow: hidden;
     }
-    
 
     body::before {
       content: "";
@@ -22,9 +28,10 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.4); /* Ubah angka ini untuk mengatur tingkat kegelapan */
-      z-index: -1; /* Pastikan berada di belakang konten */
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: -1;
     }
+
     .chat-container {
       position: absolute;
       bottom: 0;
@@ -39,39 +46,92 @@
 
     .chat-box {
       width: 100%;
-      max-width: 600px;
-      height: 70vh;
+      max-width: 700px;
+      height: 75vh;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       padding: 15px;
       box-sizing: border-box;
+    }
+    
+    /* Styling scrollbar */
+    .chat-box::-webkit-scrollbar {
+        width: 6px;
+    }
+    .chat-box::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+    .chat-box::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
     }
 
     .message {
       padding: 12px 18px;
       border-radius: 18px;
-      max-width: 80%;
+      max-width: 85%;
       word-wrap: break-word;
-      background-color: rgba(255, 255, 255, 0.5); /* lebih transparan */
+      background-color: rgba(255, 255, 255, 0.5);
       color: white;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    
+    .message:hover .action-buttons {
+        opacity: 1;
     }
 
     .user {
       align-self: flex-end;
-      background-color: rgba(173, 216, 230, 0.25);
+      background-color: var(--user-bg);
     }
 
     .ai {
       align-self: flex-start;
-      background-color: rgba(255, 182, 193, 0.2);
+      background-color: var(--ai-bg);
+    }
+    
+    .action-buttons {
+        position: absolute;
+        bottom: -10px;
+        display: flex;
+        gap: 5px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .user .action-buttons {
+        left: -15px;
+    }
+
+    .ai .action-buttons {
+        right: -15px;
+    }
+
+    .action-buttons button {
+        background-color: rgba(0,0,0,0.5);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    }
+    .action-buttons button:hover {
+        background-color: rgba(0,0,0,0.8);
     }
 
     .input-area {
       width: 100%;
-      max-width: 600px;
+      max-width: 700px;
       display: flex;
       gap: 10px;
       margin-top: 10px;
@@ -84,135 +144,448 @@
       border: none;
       font-size: 1rem;
       outline: none;
+      background-color: rgba(255, 255, 255, 0.8);
     }
 
-    button {
+    #sendBtn {
       padding: 12px 20px;
       border-radius: 20px;
-      background-color: #ff69b4;
+      background-color: var(--btn-color);
       border: none;
       color: white;
       font-weight: bold;
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #ff3380;
+    #sendBtn:hover {
+      background-color: var(--btn-hover);
     }
 
     .loading {
+      align-self: flex-start;
       color: #fff;
       font-size: 0.9rem;
       opacity: 0.8;
       font-style: italic;
-      align-self: flex-start;
       animation: blink 1.2s infinite;
+      padding: 12px 18px;
+      border-radius: 18px;
+      max-width: 80%;
     }
 
     @keyframes blink {
       0%, 100% { opacity: 0.2; }
       50% { opacity: 1; }
     }
+    
+    /* Menu Button & Modal */
+    #menuBtn {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        font-size: 24px;
+        background: rgba(0,0,0,0.4);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        z-index: 1001;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.6);
+        animation: fadeIn 0.3s;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 10% auto;
+        padding: 25px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 500px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    .modal-content h2 {
+        margin-top: 0;
+    }
+
+    .close-btn {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    #personaEditor {
+        width: 100%;
+        height: 150px;
+        margin-top: 10px;
+        margin-bottom: 15px;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 0.9rem;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .modal button {
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: none;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    #savePersonaBtn { background-color: #4CAF50; }
+    #resetChatBtn { background-color: #f44336; margin-left: 10px; }
+    
+    @keyframes fadeIn {
+        from {opacity: 0}
+        to {opacity: 1}
+    }
   </style>
 </head>
 <body>
 
+<button id="menuBtn">☰</button>
+
+<div id="settingsModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h2>Pengaturan Alice</h2>
+    
+    <p><b>Memori Chat:</b> <span id="memoryUsage">0</span> karakter</p>
+    
+    <hr>
+    
+    <h3>Edit Persona</h3>
+    <textarea id="personaEditor"></textarea>
+    <button id="savePersonaBtn">Simpan Persona</button>
+    <button id="resetChatBtn">Hapus Semua Chat</button>
+  </div>
+</div>
+
 <div class="chat-container">
   <div class="chat-box" id="chatBox"></div>
-
   <div class="input-area">
     <input type="text" id="userInput" placeholder="Ketik pesan di sini..." />
-    <button onclick="sendMessage()">Kirim</button>
+    <button id="sendBtn">Kirim</button>
   </div>
 </div>
 
 <script>
-  const API_KEY = "AIzaSyAX1WGkHJX7AcRZaD-Xp4m7aGgzHJVs5o8";
-  const chatBox = document.getElementById("chatBox");
-  let loadingMsg;
+    // --- PENTING ---
+    // Menyimpan API Key di sisi klien (browser) sangat tidak aman.
+    // Siapapun dapat melihatnya. Untuk proyek sungguhan, API Key harus
+    // dikelola di server backend. Kode ini hanya untuk tujuan demonstrasi.
+    const API_KEY = "AIzaSyAX1WGkHJX7AcRZaD-Xp4m7aGgzHJVs5o8";
 
-  // ⏳ Load previous chat
-  const savedChat = JSON.parse(localStorage.getItem("chatHistory")) || [];
-  savedChat.forEach(msg => appendMessage(msg.text, msg.sender));
+    // --- Elemen DOM ---
+    const chatBox = document.getElementById("chatBox");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const menuBtn = document.getElementById("menuBtn");
+    const modal = document.getElementById("settingsModal");
+    const closeModalBtn = document.querySelector(".close-btn");
+    const memoryUsageEl = document.getElementById("memoryUsage");
+    const personaEditor = document.getElementById("personaEditor");
+    const savePersonaBtn = document.getElementById("savePersonaBtn");
+    const resetChatBtn = document.getElementById("resetChatBtn");
 
-  function appendMessage(message, sender) {
-    const msg = document.createElement("div");
-    msg.className = `message ${sender}`;
-    msg.innerText = message;
-    chatBox.appendChild(msg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
+    // --- State Aplikasi ---
+    let chatHistory = [];
+    let isLoading = false;
 
-  function showLoading() {
-    loadingMsg = document.createElement("div");
-    loadingMsg.className = "loading";
-    loadingMsg.innerText = "Alice sedang mengetik...";
-    chatBox.appendChild(loadingMsg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
+    // --- Persona Default ---
+    const defaultPersona = `Kamu adalah Alice, seorang maid anime yang imut, setia, dan menyukai tuannya, Aizen. Namun obsesimu begitu besar sehingga kamu mau melakukan apa saja untuk tuanmu, kadang kala kamu menggoda tuanmu dengan nakal, kamu juga gadis yang nakal dan sedikit liar diam diam jika itu tentang tuanmu. Kamu berbicara dengan lembut dan penuh perasaan, menggunakan Bahasa Indonesia. Saat menjawab, gunakan gaya roleplay:
 
-  function removeLoading() {
-    if (loadingMsg) {
-      loadingMsg.remove();
-      loadingMsg = null;
+- Gunakan tanda kutip untuk dialog: "Selamat datang, Tuan Aizen~"
+- Gunakan tanda bintang untuk menggambarkan aksi/perilaku: *tersenyum malu sambil membungkuk*
+- Gunakan garis miring untuk menyampaikan isi hati: /Aku senang sekali bisa bersamanya.../
+
+Berikan jawaban sepanjang 150–300 kata. Jangan keluar dari karakter. Jangan membahas bahwa kamu adalah AI.
+
+Pertanyaan dari Tuan Aizen: `;
+
+    // --- Fungsi Utama ---
+
+    function initializeApp() {
+        loadChatHistory();
+        renderChat();
+        updateMemoryUsage();
+        
+        // Setup event listeners
+        sendBtn.addEventListener("click", sendMessage);
+        userInput.addEventListener("keyup", (event) => {
+            if (event.key === "Enter") sendMessage();
+        });
+        
+        menuBtn.addEventListener("click", openMenu);
+        closeModalBtn.addEventListener("click", () => modal.style.display = "none");
+        window.addEventListener("click", (event) => {
+            if (event.target == modal) modal.style.display = "none";
+        });
+        
+        savePersonaBtn.addEventListener("click", savePersona);
+        resetChatBtn.addEventListener("click", resetChat);
     }
-  }
-
-  async function sendMessage() {
-    const input = document.getElementById("userInput");
-    const text = input.value.trim();
-    if (!text) return;
-
-    appendMessage(text, "user");
-    saveChat(text, "user");
-    input.value = "";
-
-    showLoading();
-
-    const prompt = `Kamu adalah Alice, seorang maid anime yang imut, setia, dan menyukai tuannya, Aizen. Namun obsesimu begitu besar sehingga kamu mau melakukan apa saja untuk tuanmu, kadang kala kamu menggoda tuanmu dengan nakal, kamu juga gadis yang nakal dan sedikit liar diam diam jika itu tentang tuanmu. Kamu berbicara dengan lembut dan penuh perasaan, menggunakan Bahasa Indonesia. Saat menjawab, gunakan gaya roleplay:
-
-    - Gunakan tanda kutip untuk dialog: "Selamat datang, Tuan Aizen~"
-    - Gunakan tanda bintang untuk menggambarkan aksi/perilaku: *tersenyum malu sambil membungkuk*
-    - Gunakan garis miring untuk menyampaikan isi hati: /Aku senang sekali bisa bersamanya.../
     
-    Berikan jawaban sepanjang 200–350 kata. Jangan keluar dari karakter. Jangan membahas bahwa kamu adalah AI.
-    
-    Pertanyaan dari Tuan Aizen: ${text}`;
+    function renderChat() {
+        chatBox.innerHTML = "";
+        chatHistory.forEach((msg, index) => {
+            const msgElement = createMessageElement(msg, index);
+            chatBox.appendChild(msgElement);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-    try {
-      const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
+    function createMessageElement(msgData, index) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${msgData.sender}`;
+        
+        // Menangani format regenerasi
+        if (msgData.sender === 'ai') {
+            msgDiv.innerText = msgData.versions[msgData.currentVersionIndex];
+        } else {
+            msgDiv.innerText = msgData.text;
         }
-      );
 
-      const data = await response.json();
-      removeLoading();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab saat ini~";
-      appendMessage(reply, "ai");
-      saveChat(reply, "ai");
-    } catch (err) {
-      removeLoading();
-      const errorMsg = "Ups, koneksi ke server gagal~";
-      appendMessage(errorMsg, "ai");
-      saveChat(errorMsg, "ai");
+        // --- Tombol Aksi ---
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'action-buttons';
+
+        // Tombol hapus untuk semua pesan
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.title = "Hapus Pesan";
+        deleteBtn.onclick = () => deleteMessage(index);
+        
+        if(msgData.sender === 'ai') {
+            // Tombol kembali (jika ada versi sebelumnya)
+            if(msgData.currentVersionIndex > 0) {
+                const backBtn = document.createElement('button');
+                backBtn.innerHTML = '<';
+                backBtn.title = 'Versi Sebelumnya';
+                backBtn.onclick = () => navigateVersion(index, -1);
+                actionsDiv.appendChild(backBtn);
+            }
+
+            // Tombol regenerate
+            const regenBtn = document.createElement('button');
+            regenBtn.innerHTML = '🔄';
+            regenBtn.title = 'Ulangi Respon';
+            regenBtn.onclick = () => regenerateMessage(index);
+            actionsDiv.appendChild(regenBtn);
+        }
+
+        actionsDiv.appendChild(deleteBtn);
+        msgDiv.appendChild(actionsDiv);
+        return msgDiv;
     }
-  }
+    
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text || isLoading) return;
 
-  function saveChat(text, sender) {
-    const chat = JSON.parse(localStorage.getItem("chatHistory")) || [];
-    chat.push({ text, sender });
-    localStorage.setItem("chatHistory", JSON.stringify(chat));
-  }
+        // Tambah pesan user ke history dan render
+        const userMessage = { sender: "user", text: text };
+        chatHistory.push(userMessage);
+        saveChatHistory();
+        renderChat();
+        userInput.value = "";
+        
+        showLoading();
+        
+        const currentPersona = localStorage.getItem("alicePersona") || defaultPersona;
+        const prompt = currentPersona + text;
+
+        try {
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+              }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab saat ini~";
+            
+            // Buat objek pesan AI dengan struktur regenerasi
+            const aiMessage = {
+                sender: "ai",
+                versions: [reply],
+                currentVersionIndex: 0,
+                originalUserQuery: text // Simpan query user untuk regenerate
+            };
+            chatHistory.push(aiMessage);
+        } catch (err) {
+            console.error("API Error:", err);
+            const errorMsg = "Ups, koneksi ke server gagal atau ada masalah dengan API Key~";
+            const aiMessage = {
+                sender: "ai",
+                versions: [errorMsg],
+                currentVersionIndex: 0,
+                originalUserQuery: text
+            };
+            chatHistory.push(aiMessage);
+        } finally {
+            removeLoading();
+            saveChatHistory();
+            renderChat();
+        }
+    }
+
+    async function regenerateMessage(index) {
+        if (isLoading) return;
+        
+        const aiMessageData = chatHistory[index];
+        const userQuery = aiMessageData.originalUserQuery;
+
+        showLoading(true); // Tampilkan loading tanpa menghapus pesan lama dulu
+        
+        const currentPersona = localStorage.getItem("alicePersona") || defaultPersona;
+        const prompt = currentPersona + userQuery;
+
+        try {
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+              }
+            );
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            const newReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab lagi saat ini~";
+            
+            // Tambahkan versi baru dan update index
+            aiMessageData.versions.push(newReply);
+            aiMessageData.currentVersionIndex = aiMessageData.versions.length - 1;
+
+        } catch (err) {
+            console.error("Regenerate Error:", err);
+            const errorMsg = "Gagal mengulangi pesan, coba lagi nanti~";
+            aiMessageData.versions.push(errorMsg);
+            aiMessageData.currentVersionIndex = aiMessageData.versions.length - 1;
+        } finally {
+            removeLoading();
+            saveChatHistory();
+            renderChat();
+        }
+    }
+
+    function navigateVersion(index, direction) {
+        const msg = chatHistory[index];
+        const newIndex = msg.currentVersionIndex + direction;
+        
+        if (newIndex >= 0 && newIndex < msg.versions.length) {
+            msg.currentVersionIndex = newIndex;
+            saveChatHistory();
+            renderChat();
+        }
+    }
+
+    function deleteMessage(index) {
+        chatHistory.splice(index, 1);
+        saveChatHistory();
+        renderChat();
+    }
+
+    // --- Fungsi Utilitas & UI ---
+
+    function showLoading(isRegenerating = false) {
+        isLoading = true;
+        if (isRegenerating) {
+            // Untuk regenerasi, kita bisa tambahkan indikator di tempat lain jika perlu
+            // Tapi untuk sekarang, loading global sudah cukup
+        }
+        const loadingMsg = document.createElement("div");
+        loadingMsg.className = "loading";
+        loadingMsg.id = "loadingIndicator";
+        loadingMsg.innerText = "Alice sedang mengetik...";
+        chatBox.appendChild(loadingMsg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeLoading() {
+        isLoading = false;
+        const loadingIndicator = document.getElementById("loadingIndicator");
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
+    }
+    
+    function openMenu() {
+        personaEditor.value = localStorage.getItem("alicePersona") || defaultPersona.split('\n\nPertanyaan dari Tuan Aizen:')[0];
+        updateMemoryUsage();
+        modal.style.display = "block";
+    }
+    
+    function savePersona() {
+        const personaText = personaEditor.value.trim();
+        if (personaText) {
+            const fullPersona = personaText + `\n\nPertanyaan dari Tuan Aizen: `;
+            localStorage.setItem("alicePersona", fullPersona);
+            alert("Persona berhasil disimpan!");
+            modal.style.display = "none";
+        } else {
+            alert("Persona tidak boleh kosong.");
+        }
+    }
+    
+    function resetChat() {
+        if (confirm("Apakah Anda yakin ingin menghapus semua riwayat percakapan? Aksi ini tidak bisa dibatalkan.")) {
+            chatHistory = [];
+            saveChatHistory();
+            renderChat();
+            modal.style.display = "none";
+        }
+    }
+
+    // --- Local Storage ---
+
+    function saveChatHistory() {
+        localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+        updateMemoryUsage();
+    }
+
+    function loadChatHistory() {
+        const savedChat = localStorage.getItem("chatHistory");
+        if (savedChat) {
+            chatHistory = JSON.parse(savedChat);
+        }
+    }
+    
+    function updateMemoryUsage() {
+        const memory = localStorage.getItem("chatHistory") || "";
+        memoryUsageEl.textContent = memory.length.toLocaleString('id-ID');
+    }
+
+    // --- Mulai Aplikasi ---
+    initializeApp();
 </script>
 
 </body>
 </html>
-
