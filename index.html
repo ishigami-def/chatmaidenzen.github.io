@@ -44,7 +44,7 @@
       border-radius: 18px;
       max-width: 80%;
       word-wrap: break-word;
-      background-color: rgba(255, 255, 255, 0.40);
+      background-color: rgba(255, 255, 255, 0.45);
       color: white;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
@@ -123,61 +123,60 @@
       50% { opacity: 1; }
     }
 
-    /* Menu Edit */
+    /* Edit menu */
     .edit-menu {
       position: fixed;
       top: 10px;
       right: 10px;
-      width: 300px;
       background: rgba(0,0,0,0.7);
-      color: white;
       padding: 15px;
       border-radius: 12px;
+      color: white;
+      width: 280px;
       display: none;
       flex-direction: column;
       gap: 10px;
-      z-index: 100;
+      z-index: 10;
     }
 
-    .edit-menu input, .edit-menu select, .edit-menu textarea {
+    .edit-menu input, .edit-menu textarea, .edit-menu select {
       width: 100%;
-      padding: 8px;
+      padding: 6px;
       border-radius: 8px;
       border: none;
       outline: none;
       font-size: 0.9rem;
     }
 
-    .edit-menu label {
-      font-size: 0.85rem;
-      margin-top: 5px;
-    }
-
-    .toggle-edit {
+    .edit-btn {
       position: fixed;
       top: 10px;
       left: 10px;
-      z-index: 101;
+      background-color: #ff69b4;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
-
   </style>
 </head>
 <body>
 
-<button class="toggle-edit" onclick="toggleEditMenu()">⚙ Edit</button>
+<button class="edit-btn" onclick="toggleEditMenu()">Edit</button>
 
-<!-- Menu Edit -->
 <div class="edit-menu" id="editMenu">
+  <label>Ganti Background (URL):</label>
+  <input type="text" id="bgUrlInput" placeholder="https://contoh.com/bg.jpg" />
+
+  <label>Upload Background (File):</label>
+  <input type="file" id="bgFileInput" accept="image/*" />
+
   <label>Nama Karakter:</label>
-  <input type="text" id="characterName" placeholder="Nama karakter..." />
+  <input type="text" id="charNameInput" placeholder="Alice" />
 
-  <label>Edit Persona:</label>
-  <textarea id="personaInput" rows="4"></textarea>
-
-  <label>Edit Profil Karakter:</label>
-  <textarea id="profileInput" rows="3" placeholder="Profil karakter..."></textarea>
-
-  <label>Versi Gemini:</label>
+  <label>Pilih Versi Gemini:</label>
   <select id="geminiVersion">
     <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
     <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
@@ -185,8 +184,11 @@
     <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
   </select>
 
-  <label>Background Anime:</label>
-  <input type="file" id="bgFile" accept="image/*" onchange="changeBackground(event)" />
+  <label>Edit Persona:</label>
+  <textarea id="personaInput" rows="5"></textarea>
+
+  <label>Edit Profil Karakter:</label>
+  <textarea id="charProfile" rows="3"></textarea>
 </div>
 
 <div class="chat-container">
@@ -199,51 +201,80 @@
 </div>
 
 <script>
-  let API_KEY = "YOUR_API_KEY";
-  let persona = `Kamu adalah Alice, seorang maid anime yang imut dan setia.`;
-  let characterName = "Alice";
-  let profile = "";
-  let geminiVersion = "gemini-2.5-flash";
+  const API_KEY = "YOUR_API_KEY"; // Ganti dengan API key Anda
   const chatBox = document.getElementById("chatBox");
+  const personaInput = document.getElementById("personaInput");
+  const editMenu = document.getElementById("editMenu");
 
+  let currentModel = localStorage.getItem("geminiVersion") || "gemini-2.5-pro";
+  document.getElementById("geminiVersion").value = currentModel;
+
+  let persona = localStorage.getItem("persona") || 
+`Kamu adalah Alice, seorang maid anime imut yang setia dan menyayangi tuannya, Aizen.`;
+  personaInput.value = persona;
+
+  // Toggle Edit Menu
   function toggleEditMenu() {
-    const menu = document.getElementById("editMenu");
-    menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+    editMenu.style.display = editMenu.style.display === "flex" ? "none" : "flex";
   }
 
-  function changeBackground(event) {
-    const file = event.target.files[0];
+  // Ganti background URL
+  document.getElementById("bgUrlInput").addEventListener("change", e => {
+    document.body.style.background = `url('${e.target.value}') no-repeat center center fixed`;
+    document.body.style.backgroundSize = "cover";
+  });
+
+  // Ganti background dari file
+  document.getElementById("bgFileInput").addEventListener("change", e => {
+    const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = function(e) {
-        document.body.style.background = `url('${e.target.result}') no-repeat center center fixed`;
+      reader.onload = function(ev) {
+        document.body.style.background = `url('${ev.target.result}') no-repeat center center fixed`;
         document.body.style.backgroundSize = "cover";
       }
       reader.readAsDataURL(file);
     }
-  }
+  });
+
+  // Simpan perubahan persona
+  personaInput.addEventListener("change", () => {
+    persona = personaInput.value;
+    localStorage.setItem("persona", persona);
+  });
+
+  // Simpan perubahan model Gemini
+  document.getElementById("geminiVersion").addEventListener("change", e => {
+    currentModel = e.target.value;
+    localStorage.setItem("geminiVersion", currentModel);
+  });
 
   async function sendMessage() {
     const input = document.getElementById("userInput");
     const text = input.value.trim();
     if (!text) return;
+
     appendMessage(text, "user");
     input.value = "";
 
-    const prompt = `${persona}\n\nPertanyaan dari ${characterName}: ${text}`;
-    const model = geminiVersion;
+    const prompt = `${persona}\n\nPertanyaan dari Tuan: ${text}`;
+    appendMessage("Alice sedang mengetik...", "ai");
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      }
-    );
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, tidak bisa menjawab.";
-    appendMessage(reply, "ai");
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        }
+      );
+      const data = await response.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab saat ini~";
+      appendMessage(reply, "ai");
+    } catch (err) {
+      appendMessage("Ups, koneksi ke server gagal~", "ai");
+    }
   }
 
   function appendMessage(message, sender) {
