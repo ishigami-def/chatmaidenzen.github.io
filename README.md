@@ -1,2 +1,2 @@
-# chatmaid
+# chatmaid.io
 Alice, Maid 
