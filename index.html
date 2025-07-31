@@ -24,7 +24,6 @@
       align-items: center;
       padding: 20px;
       box-sizing: border-box;
-      backdrop-filter: blur(5px);
     }
 
     .chat-box {
@@ -44,20 +43,19 @@
       border-radius: 18px;
       max-width: 80%;
       word-wrap: break-word;
-      backdrop-filter: blur(6px);
-      background-color: rgba(255, 255, 255, 0.2);
+      background-color: rgba(255, 255, 255, 0.15); /* lebih transparan */
       color: white;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .user {
       align-self: flex-end;
-      background-color: rgba(173, 216, 230, 0.3);
+      background-color: rgba(173, 216, 230, 0.25);
     }
 
     .ai {
       align-self: flex-start;
-      background-color: rgba(255, 182, 193, 0.25);
+      background-color: rgba(255, 182, 193, 0.2);
     }
 
     .input-area {
@@ -90,21 +88,26 @@
     button:hover {
       background-color: #ff3380;
     }
+
+    .loading {
+      color: #fff;
+      font-size: 0.9rem;
+      opacity: 0.8;
+      font-style: italic;
+      align-self: flex-start;
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
 
 <div class="chat-container">
-  <div class="chat-box" id="chatBox">
-    <div class="message ai">"Selamat pagi, Tuan Aizen~" *membawa nampan teh hangat dan meletakkannya di meja dengan hati-hati* "Apakah Tuan tidur dengan nyenyak tadi malam?"
-
-        *menatap wajah tuannya dengan penuh perhatian, lalu tersipu malu saat mata mereka bertemu* "A-Aku... senang Tuan kembali lebih awal hari ini~"
-
-        *berdiri di samping kursi Tuan, menggenggam tangannya perlahan* "Jika ada yang bisa Alice bantu, tolong beri tahu ya..."
-
-        /Dia terlihat sangat lelah... Aku ingin sekali memeluknya dan membuatnya merasa tenang.../
-    </div>
-  </div>
+  <div class="chat-box" id="chatBox"></div>
 
   <div class="input-area">
     <input type="text" id="userInput" placeholder="Ketik pesan di sini..." />
@@ -115,6 +118,11 @@
 <script>
   const API_KEY = "AIzaSyAX1WGkHJX7AcRZaD-Xp4m7aGgzHJVs5o8";
   const chatBox = document.getElementById("chatBox");
+  let loadingMsg;
+
+  // ⏳ Load previous chat
+  const savedChat = JSON.parse(localStorage.getItem("chatHistory")) || [];
+  savedChat.forEach(msg => appendMessage(msg.text, msg.sender));
 
   function appendMessage(message, sender) {
     const msg = document.createElement("div");
@@ -124,17 +132,33 @@
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
+  function showLoading() {
+    loadingMsg = document.createElement("div");
+    loadingMsg.className = "loading";
+    loadingMsg.innerText = "Alice sedang mengetik...";
+    chatBox.appendChild(loadingMsg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function removeLoading() {
+    if (loadingMsg) {
+      loadingMsg.remove();
+      loadingMsg = null;
+    }
+  }
+
   async function sendMessage() {
     const input = document.getElementById("userInput");
     const text = input.value.trim();
     if (!text) return;
 
     appendMessage(text, "user");
+    saveChat(text, "user");
     input.value = "";
 
-        
+    showLoading();
 
-  const prompt = `Kamu adalah Alice, seorang maid anime yang imut, setia, dan menyukai tuannya, Aizen. Kamu berbicara dengan lembut dan penuh perasaan, menggunakan Bahasa Indonesia. Saat menjawab, gunakan gaya roleplay:
+    const prompt = `Kamu adalah Alice, seorang maid anime yang imut, setia, dan menyukai tuannya, Aizen. Kamu berbicara dengan lembut dan penuh perasaan, menggunakan Bahasa Indonesia. Saat menjawab, gunakan gaya roleplay:
 
     - Gunakan tanda kutip untuk dialog: "Selamat datang, Tuan Aizen~"
     - Gunakan tanda bintang untuk menggambarkan aksi/perilaku: *tersenyum malu sambil membungkuk*
@@ -159,13 +183,25 @@
       );
 
       const data = await response.json();
+      removeLoading();
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Alice tidak bisa menjawab saat ini~";
       appendMessage(reply, "ai");
+      saveChat(reply, "ai");
     } catch (err) {
-      appendMessage("Ups, koneksi ke server gagal~", "ai");
+      removeLoading();
+      const errorMsg = "Ups, koneksi ke server gagal~";
+      appendMessage(errorMsg, "ai");
+      saveChat(errorMsg, "ai");
     }
+  }
+
+  function saveChat(text, sender) {
+    const chat = JSON.parse(localStorage.getItem("chatHistory")) || [];
+    chat.push({ text, sender });
+    localStorage.setItem("chatHistory", JSON.stringify(chat));
   }
 </script>
 
 </body>
 </html>
+
