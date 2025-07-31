@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -68,6 +69,12 @@
       display: block;
     }
 
+    .stats {
+      font-size: 0.75rem;
+      color: #ddd;
+      margin-top: 4px;
+    }
+
     .user {
       align-self: flex-end;
       background-color: rgba(173, 216, 230, 0.25);
@@ -124,19 +131,6 @@
     }
 
     /* Edit menu */
-    .edit-btn {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background-color: #ff69b4;
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: none;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
     .edit-menu {
       position: fixed;
       top: 10px;
@@ -161,10 +155,17 @@
       font-size: 0.9rem;
     }
 
-    .stats {
-      font-size: 0.75rem;
-      color: #ddd;
-      margin-top: 4px;
+    .edit-btn {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: #ff69b4;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -209,7 +210,7 @@
 </div>
 
 <script>
-  const API_KEY = "AIzaSyCe_p3JDhxsw0mfJywNNC19CPreyacUqYk"; // Masukkan API key Gemini
+  const API_KEY = "AIzaSyCe_p3JDhxsw0mfJywNNC19CPreyacUqYk"; // Ganti dengan API key Anda
   const chatBox = document.getElementById("chatBox");
   const personaInput = document.getElementById("personaInput");
   const editMenu = document.getElementById("editMenu");
@@ -263,7 +264,6 @@
 
   function resetChat() {
     chatBox.innerHTML = "";
-    localStorage.removeItem("chatHistory");
   }
 
   function appendMessage(message, sender, stats="") {
@@ -271,13 +271,14 @@
     msg.className = `message ${sender}`;
     msg.innerText = message;
 
+    // Tombol hapus per balon
     const delBtn = document.createElement("button");
     delBtn.innerText = "❌";
     delBtn.className = "delete-btn";
     delBtn.onclick = () => msg.remove();
     msg.appendChild(delBtn);
 
-    if(stats) {
+    if (stats) {
       const statDiv = document.createElement("div");
       statDiv.className = "stats";
       statDiv.innerHTML = stats;
@@ -296,9 +297,8 @@
     appendMessage(text, "user");
     input.value = "";
 
-    const prompt = `${persona}\n\nPertanyaan: ${text}`;
+    const prompt = `${persona}\n\nPertanyaan dari Tuan: ${text}`;
     const startTime = performance.now();
-
     appendMessage("Alice sedang mengetik...", "ai");
 
     try {
