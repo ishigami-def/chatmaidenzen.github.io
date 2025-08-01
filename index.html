@@ -221,10 +221,13 @@
 </div>
 
 <script>
-  const API_KEY = "AIzaSyAX1WGkHJX7AcRZaD-Xp4m7aGgzHJVs5o8"; // Ganti dengan API key Anda
+  const API_KEY = "AIzaSyCe_p3JDhxsw0mfJywNNC19CPreyacUqYk"; // Ganti dengan API key Anda
   const chatBox = document.getElementById("chatBox");
   const personaInput = document.getElementById("personaInput");
   const editMenu = document.getElementById("editMenu");
+  
+  // Array untuk menyimpan riwayat percakapan sebagai konteks
+  let chatHistory = [];
 
   let currentModel = localStorage.getItem("geminiVersion") || "gemini-2.5-pro";
   document.getElementById("geminiVersion").value = currentModel;
@@ -232,7 +235,7 @@
   let persona = localStorage.getItem("persona") || 
 `Kamu adalah Alice, seorang maid anime imut yang setia dan menyayangi tuannya, Aizen.`;
   personaInput.value = persona;
-
+  
   // Toggle Edit Menu
   function toggleEditMenu() {
     editMenu.style.display = editMenu.style.display === "flex" ? "none" : "flex";
@@ -268,17 +271,28 @@
     currentModel = e.target.value;
     localStorage.setItem("geminiVersion", currentModel);
   });
-
-  // Fungsi untuk menghapus semua pesan
+  
+  // Fungsi untuk menghapus semua pesan dan riwayat
   function resetChat() {
       chatBox.innerHTML = '';
+      chatHistory = []; // Mengosongkan riwayat chat
   }
 
-  // Fungsi untuk menghapus pesan spesifik
+  // Fungsi untuk menghapus pesan spesifik dari tampilan dan riwayat
   function deleteMessage(element) {
+      // Dapatkan index dari elemen yang akan dihapus
+      const messages = Array.from(chatBox.children);
+      const index = messages.indexOf(element);
+      
+      // Hapus pesan dari riwayat
+      if (index !== -1 && index < chatHistory.length) {
+          // Hapus pesan pengguna dan balasan AI terkait
+          chatHistory.splice(index, 2);
+      }
+      
       element.remove();
   }
-
+  
   // Fungsi untuk menghitung perkiraan token
   function countTokens(text) {
       // Perkiraan sederhana: 1 token ~ 4 karakter
@@ -290,6 +304,8 @@
     const text = input.value.trim();
     if (!text) return;
 
+    // Tambahkan pesan pengguna ke riwayat dan tampilkan
+    chatHistory.push({ role: 'user', parts: [{ text: text }] });
     const userMessageTokenCount = countTokens(text);
     appendMessage(text, "user", `Tokens: ${userMessageTokenCount}`);
     input.value = "";
@@ -297,7 +313,21 @@
     const loadingMessage = appendMessage("Alice sedang mengetik...", "ai");
     
     const startTime = performance.now();
-    const prompt = `${persona}\n\nPertanyaan dari Tuan: ${text}`;
+    
+    // Prompt awal, kita bisa letakkan persona di sini
+    const initialPrompt = [
+      {
+        role: 'user',
+        parts: [{ text: persona }]
+      },
+      {
+        role: 'model',
+        parts: [{ text: "Baik, Tuan. Ada yang bisa Alice bantu?" }]
+      }
+    ];
+    
+    // Gabungkan prompt awal dan riwayat chat untuk dikirim ke API
+    const fullPrompt = [...initialPrompt, ...chatHistory];
 
     try {
       const response = await fetch(
@@ -305,7 +335,7 @@
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          body: JSON.stringify({ contents: fullPrompt })
         }
       );
       const data = await response.json();
@@ -316,6 +346,9 @@
       const aiMessageTokenCount = countTokens(reply);
 
       const infoText = `Waktu: ${generationTime.toFixed(2)}s | Tokens: ${aiMessageTokenCount}`;
+      
+      // Tambahkan balasan AI ke riwayat
+      chatHistory.push({ role: 'model', parts: [{ text: reply }] });
       
       // Hapus pesan loading dan ganti dengan balasan nyata
       chatBox.removeChild(loadingMessage);
